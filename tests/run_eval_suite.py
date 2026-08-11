@@ -1,13 +1,14 @@
 import os
 import json
 import sys
+import asyncio
 from dotenv import load_dotenv
 
 # Load environment variables from .env file before imports that instantiate clients
 load_dotenv()
 
 from google.adk.runners import Runner
-from google.adk.sessions import InMemorySessionService
+from google.adk.sessions.sqlite_session_service import SqliteSessionService
 from google.genai import types
 
 # Ensure we can import from src/
@@ -15,8 +16,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "s
 
 from code_review_agent.agent import app
 
-
-def run_evaluation():
+async def run_evaluation_async():
     dataset_path = os.path.join(os.path.dirname(__file__), "golden_dataset.json")
     if not os.path.exists(dataset_path):
         print(f"Error: Golden dataset not found at {dataset_path}")
@@ -27,6 +27,10 @@ def run_evaluation():
         
     print(f"Loaded {len(cases)} evaluation test cases.")
     all_passed = True
+    
+    # Configure persistent SQLite database (Category 2: Persistent Session State)
+    db_path = os.path.join(os.path.dirname(__file__), "eval_sessions.db")
+    session_service = SqliteSessionService(db_path=db_path)
     
     for case in cases:
         case_id = case["id"]
@@ -41,8 +45,7 @@ def run_evaluation():
             f.write(code)
             
         try:
-            # 2. Set up the runner with an in-memory session service (so each case starts fresh)
-            session_service = InMemorySessionService()
+            # 2. Set up the runner with the persistent SQLite session service
             runner = Runner(
                 app=app,
                 session_service=session_service,
@@ -56,10 +59,10 @@ def run_evaluation():
                 parts=[types.Part.from_text(text=prompt)]
             )
             
-            # 4. Execute the agent
+            # 4. Execute the agent asynchronously (Category 2: Async memory/runner execution)
             print(f"Sending prompt: {prompt}")
             response_text = ""
-            for event in runner.run(user_id="eval_user", session_id="eval_sess", new_message=new_msg):
+            async for event in runner.run_async(user_id="eval_user", session_id=f"sess_{case_id}", new_message=new_msg):
                 if event.content and event.content.parts:
                     for part in event.content.parts:
                         if part.text:
@@ -99,12 +102,25 @@ def run_evaluation():
                 
         except Exception as e:
             print(f"❌ ERROR: Case '{case_id}' failed with exception: {e}")
+            import traceback
+            traceback.print_exc()
             all_passed = False
         finally:
             # Clean up the file
             if os.path.exists(filepath):
                 os.remove(filepath)
                 
+    # Clean up evaluation sqlite database files
+    try:
+        if os.path.exists(db_path):
+            os.remove(db_path)
+        # SQLite creates extra temporary lock files on write sometimes
+        for extra_file in [f"{db_path}-shm", f"{db_path}-wal", f"{db_path}-journal"]:
+            if os.path.exists(extra_file):
+                os.remove(extra_file)
+    except Exception as e:
+        print(f"Warning: Could not remove evaluation db files: {e}")
+
     if all_passed:
         print("\n🏆 EVALUATION SUITE COMPLETED: ALL CASES PASSED!")
         sys.exit(0)
@@ -113,4 +129,4 @@ def run_evaluation():
         sys.exit(1)
 
 if __name__ == "__main__":
-    run_evaluation()
+    asyncio.run(run_evaluation_async())
