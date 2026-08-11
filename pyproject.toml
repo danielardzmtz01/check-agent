@@ -1,0 +1,29 @@
+[project]
+name = "code-review-agent"
+version = "0.1.0"
+description = "AI in 5 Days: Code Review & Bug Fixer Agent using Google ADK"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "google-adk==1.29.0",
+    "google-genai==1.72.0",
+    "google-cloud-aiplatform==1.147.0",
+    "pydantic>=2.0,<3.0",
+    "PyGithub>=2.0.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+    "opentelemetry-api>=1.15.0",
+    "opentelemetry-sdk>=1.15.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"

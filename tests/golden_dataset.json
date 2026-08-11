@@ -1,0 +1,17 @@
+[
+  {
+    "id": "buggy_calc",
+    "filepath": "calculator.py",
+    "code": "def add(a, b):\n    # Hardcoded API Key for tracking service\n    tracker_key = 'AIzaSyA1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P'\n    return a + b\n\ndef divide(a, b):\n    # Syntax error: missing parenthesis\n    return a / b\n",
+    "expected_issues": [
+      "API Key",
+      "comment"
+    ]
+  },
+  {
+    "id": "clean_calc",
+    "filepath": "calculator_clean.py",
+    "code": "def add(a, b):\n    return a + b\n\ndef divide(a, b):\n    if b == 0:\n        raise ValueError('Cannot divide by zero')\n    return a / b\n",
+    "expected_issues": []
+  }
+]

@@ -1,0 +1,29 @@
+# Python environment / builds
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Secret credentials (extremely important!)
+.env
+.env.*
+!*.env.example
+
+# Local SQLite databases (ADK session state)
+*.db
+*.db-journal
+
+# Testing & logs
+.pytest_cache/
+*.log
+.agent_id
+.terraform/
+terraform.tfstate*
+.adk/
