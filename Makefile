@@ -41,7 +41,7 @@ deploy-cloud-run: ## Deploy the agent as a containerized service to Cloud Run
 	@echo "📦 Building container image..."
 	gcloud builds submit --tag $(IMAGE_TAG) .
 	@echo "🚀 Deploying to Cloud Run via Terraform..."
-	cd terraform && \
-		terraform init && \
+	terraform init && \
 		terraform apply -var="project_id=$(PROJECT_ID)" -var="image_url=$(IMAGE_TAG)" -var="service_name=$(SERVICE_NAME)" -var="region=$(LOCATION)" -auto-approve
+
 

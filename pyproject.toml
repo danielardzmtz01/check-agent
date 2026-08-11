@@ -15,7 +15,10 @@ dependencies = [
     "opentelemetry-api>=1.15.0",
     "opentelemetry-sdk>=1.15.0",
     "python-dotenv>=1.0.0",
+    "google-cloud-secret-manager>=2.20.0",
+    "google-cloud-storage>=2.15.0",
 ]
+
 
 [project.optional-dependencies]
 dev = [

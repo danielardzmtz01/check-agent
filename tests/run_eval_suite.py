@@ -4,17 +4,43 @@ import sys
 import asyncio
 from dotenv import load_dotenv
 
+# Ensure we can import from src/
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
+
+def resolve_api_key():
+    """Resolves Gemini API Key, attempting Secret Manager fallback if not in env."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if api_key:
+        return api_key
+        
+    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
+    secret_name = os.environ.get("GEMINI_API_KEY_SECRET_NAME", "gemini-api-key")
+    
+    if project_id:
+        try:
+            from google.adk.integrations.secret_manager.secret_client import SecretManagerClient
+            print(f"Attempting to fetch API key from Google Secret Manager (project={project_id}, secret={secret_name})...")
+            client = SecretManagerClient()
+            resource_path = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
+            secret_val = client.get_secret(resource_path)
+            if secret_val:
+                os.environ["GEMINI_API_KEY"] = secret_val
+                return secret_val
+        except Exception as e:
+            print(f"Warning: Could not fetch secret from Secret Manager: {e}")
+            
+    return None
+
 # Load environment variables from .env file before imports that instantiate clients
 load_dotenv()
+resolve_api_key()
 
 from google.adk.runners import Runner
 from google.adk.sessions.sqlite_session_service import SqliteSessionService
 from google.genai import types
 
-# Ensure we can import from src/
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
-
 from code_review_agent.agent import app
+
 
 async def run_evaluation_async():
     dataset_path = os.path.join(os.path.dirname(__file__), "golden_dataset.json")

@@ -21,7 +21,41 @@ from code_review_agent.telemetry import (
     after_tool_logging_callback,
 )
 
+import os
+from dotenv import load_dotenv
+
+# Try loading .env variables locally
+load_dotenv()
+
+def resolve_api_key():
+    """Resolves Gemini API Key, attempting Secret Manager fallback if not in env."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if api_key:
+        return api_key
+        
+    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
+    secret_name = os.environ.get("GEMINI_API_KEY_SECRET_NAME", "gemini-api-key")
+    
+    if project_id:
+        try:
+            from google.adk.integrations.secret_manager.secret_client import SecretManagerClient
+            print(f"Attempting to fetch API key from Google Secret Manager (project={project_id}, secret={secret_name})...")
+            client = SecretManagerClient()
+            resource_path = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
+            secret_val = client.get_secret(resource_path)
+            if secret_val:
+                os.environ["GEMINI_API_KEY"] = secret_val
+                return secret_val
+        except Exception as e:
+            print(f"Warning: Could not fetch secret from Secret Manager: {e}")
+            
+    return None
+
+# Resolve key before any ADK agents are initialized
+resolve_api_key()
+
 def create_agent_system(
+
     pro_model: str = "gemini-pro-latest",
     flash_model: str = "gemini-3.5-flash"
 ) -> LlmAgent:
