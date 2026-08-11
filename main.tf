@@ -19,6 +19,7 @@ resource "google_project_service" "enabled_apis" {
     "run.googleapis.com",
     "secretmanager.googleapis.com",
     "iam.googleapis.com",
+    "storage.googleapis.com",
   ])
   service            = each.key
   disable_on_destroy = false
@@ -31,20 +32,32 @@ resource "google_service_account" "run_sa" {
   depends_on   = [google_project_service.enabled_apis]
 }
 
-# 3. Reference the Secret Manager secret for API Key
-data "google_secret_manager_secret" "api_key" {
-  secret_id  = var.gemini_api_key_secret_id
-  depends_on = [google_project_service.enabled_apis]
+# 3. Provision the GCS Staging Bucket (Category 5: Declarative Resource Provisioning)
+resource "google_storage_bucket" "staging_bucket" {
+  name                        = var.staging_bucket_name
+  location                    = var.region
+  force_destroy               = true
+  uniform_bucket_level_access = true
+  depends_on                  = [google_project_service.enabled_apis]
 }
 
-# 4. Grant Service Account access to Secret Manager
+# 4. Provision the Secret Manager secret for API Key (Category 5: Declarative Resource Provisioning)
+resource "google_secret_manager_secret" "api_key" {
+  secret_id  = var.gemini_api_key_secret_id
+  depends_on = [google_project_service.enabled_apis]
+  replication {
+    auto {}
+  }
+}
+
+# 5. Grant Service Account access to Secret Manager
 resource "google_secret_manager_secret_iam_member" "sa_secret_accessor" {
-  secret_id = data.google_secret_manager_secret.api_key.id
+  secret_id = google_secret_manager_secret.api_key.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.run_sa.email}"
 }
 
-# 5. Cloud Run Service
+# 6. Cloud Run Service
 resource "google_cloud_run_v2_service" "agent_service" {
   name     = var.service_name
   location = var.region
@@ -65,7 +78,7 @@ resource "google_cloud_run_v2_service" "agent_service" {
         name = "GEMINI_API_KEY"
         value_source {
           secret_key_ref {
-            secret  = data.google_secret_manager_secret.api_key.secret_id
+            secret  = google_secret_manager_secret.api_key.secret_id
             version = "latest"
           }
         }
@@ -87,11 +100,12 @@ resource "google_cloud_run_v2_service" "agent_service" {
 
   depends_on = [
     google_project_service.enabled_apis,
+    google_storage_bucket.staging_bucket,
     google_secret_manager_secret_iam_member.sa_secret_accessor
   ]
 }
 
-# 6. Allow Unauthenticated Access (if public demo is desired)
+# 7. Allow Unauthenticated Access (if public demo is desired)
 resource "google_cloud_run_v2_service_iam_member" "public_access" {
   name     = google_cloud_run_v2_service.agent_service.name
   location = google_cloud_run_v2_service.agent_service.location

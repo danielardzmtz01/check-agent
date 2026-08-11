@@ -34,14 +34,15 @@ deploy-agent-engine: ## Deploy the agent to Vertex AI Agent Engine (Reasoning En
 	python3 deployment/deploy_agent_engine.py --project $(PROJECT_ID) --location $(LOCATION) --bucket $(STAGING_BUCKET)
 
 deploy-cloud-run: ## Deploy the agent as a containerized service to Cloud Run
-	@if [ -z "$(PROJECT_ID)" ]; then \
-		echo "Error: PROJECT_ID variable must be set."; \
+	@if [ -z "$(PROJECT_ID)" ] || [ -z "$(STAGING_BUCKET)" ]; then \
+		echo "Error: PROJECT_ID and STAGING_BUCKET variables must be set."; \
 		exit 1; \
 	fi
 	@echo "📦 Building container image..."
 	gcloud builds submit --tag $(IMAGE_TAG) .
 	@echo "🚀 Deploying to Cloud Run via Terraform..."
 	terraform init && \
-		terraform apply -var="project_id=$(PROJECT_ID)" -var="image_url=$(IMAGE_TAG)" -var="service_name=$(SERVICE_NAME)" -var="region=$(LOCATION)" -auto-approve
+		terraform apply -var="project_id=$(PROJECT_ID)" -var="image_url=$(IMAGE_TAG)" -var="service_name=$(SERVICE_NAME)" -var="region=$(LOCATION)" -var="staging_bucket_name=$(STAGING_BUCKET)" -auto-approve
+
 
 

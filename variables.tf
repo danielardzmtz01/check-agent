@@ -25,3 +25,9 @@ variable "gemini_api_key_secret_id" {
   default     = "gemini-api-key"
   description = "The name of the Secret Manager secret containing the Gemini API Key."
 }
+
+variable "staging_bucket_name" {
+  type        = string
+  description = "The name of the GCS staging bucket to be provisioned for agent deployment."
+}
+
