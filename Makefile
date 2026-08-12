@@ -23,10 +23,10 @@ eval: ## Execute the automated evaluation/regression suite
 	PYTHONPATH=src python3 tests/run_eval_suite.py
 
 local-eval: ## Run the visual HTML scorecard agent evaluator. Pass REPO=/path/to/repo to scan another agent.
-	PYTHONPATH=src python3 agent_evaluator/evaluator.py $(REPO)
+	PYTHONPATH=src python3 agent_evaluator/evaluator.py "$(REPO)"
 
 fde-eval: ## Run the FDE L4 Readiness dossier evaluator. Pass REPO=/path/to/dossier.
-	PYTHONPATH=src python3 agent_evaluator/evaluator.py $(REPO) --rubric fde-l4
+	PYTHONPATH=src python3 agent_evaluator/evaluator.py "$(REPO)" --rubric fde-l4
 
 
 
