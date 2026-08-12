@@ -31,6 +31,8 @@ terraform.tfstate*
 # Local Evaluator Tool
 agent_evaluator/
 evaluation_report.html
+interview_questions.html
 *.pdf
+
 
 
