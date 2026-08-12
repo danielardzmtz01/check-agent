@@ -22,6 +22,10 @@ test: ## Run local pytest test suite
 eval: ## Execute the automated evaluation/regression suite
 	PYTHONPATH=src python3 tests/run_eval_suite.py
 
+local-eval: ## Run the visual HTML scorecard agent evaluator
+	PYTHONPATH=src python3 agent_evaluator/evaluator.py
+
+
 dev: ## Start the ADK web server locally for interactive UI testing
 	python3 -m google.adk.cli.cli web --session_service_uri=sqlite:///agent_sessions.db --port=8000 src/code_review_agent
 

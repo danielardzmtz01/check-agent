@@ -27,3 +27,10 @@ dist/
 .terraform/
 terraform.tfstate*
 .adk/
+
+# Local Evaluator Tool
+agent_evaluator/
+evaluation_report.html
+*.pdf
+
+
